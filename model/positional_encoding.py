@@ -11,8 +11,8 @@ class Solution:
         # then compute all values at once with broadcasting (no loops needed).
         # Assign sine to even columns (PE[:, 0::2]) and cosine to odd columns (PE[:, 1::2]).
         # Round to 5 decimal places.
-        print("Number of tokens in a sentence:", seq_len)
-        print("Size of each token embedding vector:", d_model)
+        # print("Number of tokens in a sentence:", seq_len)
+        # print("Size of each token embedding vector:", d_model)
         positions = np.arange(seq_len).reshape(-1, 1) # number of max tokens in a sentence
 
         PE_res = np.zeros((seq_len, d_model)) # the resultant matrix for each sentence, is for each position, we have it's encoding in terms of embedding size
