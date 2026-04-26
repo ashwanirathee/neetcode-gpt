@@ -20,7 +20,7 @@ class Solution:
             y = torch.stack([data[i + 1:i + 1 + context_length] for i in indexes])
 
             logits = model.forward(x)
-            print(logits.shape)
+            # print(logits.shape)
             B, T, C = logits.shape
             logits_flat = logits.view(B * T, C)
             targets_flat = y.view(B * T)
