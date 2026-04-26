@@ -11,7 +11,7 @@ class Solution:
         for i in data:
             stoi[i] = max_val
             max_val = max_val + 1
-        print(stoi)
+        # print(stoi)
         itos = {}
         for key, value in stoi.items():
             itos[value] = key
