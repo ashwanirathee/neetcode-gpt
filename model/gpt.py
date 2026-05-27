@@ -2,39 +2,32 @@ import torch
 import torch.nn as nn
 from torchtyping import TensorType
 
-# 1. Remember to include an additional LayerNorm after the block sequence and before the final linear layer
-# 2. Instantiate in the following order: Word embeddings, position embeddings, transformer blocks, final layer norm, and vocabulary projection.
 class GPT(nn.Module):
 
     def __init__(self, vocab_size: int, context_length: int, model_dim: int, num_blocks: int, num_heads: int):
         super().__init__()
         torch.manual_seed(0)
-        # Hint: nn.Sequential() will be useful for the block sequence
-        self.word_embeddings = nn.Embedding(vocab_size, model_dim) 
+        self.word_embeddings = nn.Embedding(vocab_size, model_dim)
         self.position_embeddings = nn.Embedding(context_length, model_dim)
-        self.transformer_stuff = nn.Sequential()
+        self.transformer_blocks = nn.Sequential()
         for i in range(num_blocks):
-            self.transformer_stuff.append(self.TransformerBlock(model_dim, num_heads))
-
-        self.layer_norm = nn.LayerNorm(model_dim)
+            self.transformer_blocks.append(self.TransformerBlock(model_dim, num_heads))
+        self.final_norm = nn.LayerNorm(model_dim)
         self.vocab_projection = nn.Linear(model_dim, vocab_size)
 
     def forward(self, context: TensorType[int]) -> TensorType[float]:
         torch.manual_seed(0)
-        # 1. Add token embeddings + position embeddings (use torch.arange for positions)
-        # 2. Pass through transformer blocks
-        # 3. Apply final LayerNorm, then project to vocab_size
-        # 4. Return logits rounded to 4 decimal places (no softmax)
+        # Token embeddings + positional embeddings
         embedded = self.word_embeddings(context)
         positions = torch.arange(context.shape[1], device=context.device)
         embedded = embedded + self.position_embeddings(positions)
 
-        res = self.transformer_stuff.forward(embedded)
-        res = self.layer_norm(res)
-        res = self.vocab_projection(res)
-        return torch.round(res, decimals=4)
+        # Pass through N transformer blocks, then final LayerNorm
+        output = self.final_norm(self.transformer_blocks(embedded))
+        logits = self.vocab_projection(output)  # (B, T, vocab_size)
 
-    # Do NOT modify the code below this line
+        return torch.round(logits, decimals=4)
+
     class TransformerBlock(nn.Module):
 
         class MultiHeadedSelfAttention(nn.Module):
@@ -46,7 +39,7 @@ class GPT(nn.Module):
                     self.key_gen = nn.Linear(model_dim, head_size, bias=False)
                     self.query_gen = nn.Linear(model_dim, head_size, bias=False)
                     self.value_gen = nn.Linear(model_dim, head_size, bias=False)
-                
+
                 def forward(self, embedded: TensorType[float]) -> TensorType[float]:
                     k = self.key_gen(embedded)
                     q = self.query_gen(embedded)
@@ -62,7 +55,7 @@ class GPT(nn.Module):
                     scores = nn.functional.softmax(scores, dim = 2)
 
                     return scores @ v
-                
+
             def __init__(self, model_dim: int, num_heads: int):
                 super().__init__()
                 torch.manual_seed(0)
@@ -77,7 +70,7 @@ class GPT(nn.Module):
                     head_outputs.append(head(embedded))
                 concatenated = torch.cat(head_outputs, dim = 2)
                 return self.output_proj(concatenated)
-        
+
         class VanillaNeuralNetwork(nn.Module):
 
             def __init__(self, model_dim: int):
@@ -87,7 +80,7 @@ class GPT(nn.Module):
                 self.relu = nn.ReLU()
                 self.down_projection = nn.Linear(model_dim * 4, model_dim)
                 self.dropout = nn.Dropout(0.2) # using p = 0.2
-            
+
             def forward(self, x: TensorType[float]) -> TensorType[float]:
                 torch.manual_seed(0)
                 return self.dropout(self.down_projection(self.relu(self.up_projection(x))))
